@@ -15,6 +15,10 @@ require('./config/passport');
 
 const app = express();
 
+// Trust Render's reverse proxy so Express correctly detects https://
+// and secure cookies work properly behind the load balancer
+app.set('trust proxy', 1);
+
 // --------------- Middleware ---------------
 const allowedOrigin = process.env.CLIENT_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 app.use(cors({

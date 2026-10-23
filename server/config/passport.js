@@ -19,11 +19,15 @@ passport.deserializeUser(async (id, done) => {
 
 // Google OAuth 2.0 Strategy
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  // Build absolute callbackURL so it works correctly behind Render's HTTPS proxy.
+  // A relative path would cause Passport to construct http:// which mismatches
+  // the https:// URI registered in Google Cloud Console.
+  const baseUrl = (process.env.CLIENT_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000').replace(/\/$/, '');
   passport.use(new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/api/auth/google/callback',
+      callbackURL: `${baseUrl}/api/auth/google/callback`,
       passReqToCallback: true
     },
     async (req, accessToken, refreshToken, profile, done) => {
