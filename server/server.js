@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const passport = require('passport');
 const path = require('path');
 const connectDB = require('./config/db');
@@ -27,9 +28,16 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  // Use MongoDB to store sessions — eliminates MemoryStore warning in production
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    ttl: 24 * 60 * 60,      // Session TTL in seconds (1 day)
+    autoRemove: 'native'    // Use MongoDB's native TTL index for cleanup
+  }),
   cookie: {
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-    secure: false                  // set true in production with HTTPS
+    maxAge: 24 * 60 * 60 * 1000,             // 1 day in ms
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   }
 }));
 
