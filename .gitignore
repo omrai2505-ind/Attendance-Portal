@@ -12,6 +12,7 @@ inference/**/*.py[cod]
 .env
 .env.*
 server/.env
+render.env
 
 # Keep the safe template in version control
 !server/.env.example
