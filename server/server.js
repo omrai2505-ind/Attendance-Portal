@@ -24,19 +24,28 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Session store: use MongoDB in production, fallback to memory for local dev
+let sessionStore;
+if (process.env.MONGO_URI && process.env.NODE_ENV === 'production') {
+  try {
+    sessionStore = MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      ttl: 24 * 60 * 60,     // 1 day TTL
+      autoRemove: 'native'
+    });
+  } catch (err) {
+    console.warn('⚠️  MongoStore init failed, using MemoryStore:', err.message);
+  }
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || 'dev-secret',
   resave: false,
   saveUninitialized: false,
-  // Use MongoDB to store sessions — eliminates MemoryStore warning in production
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI,
-    ttl: 24 * 60 * 60,      // Session TTL in seconds (1 day)
-    autoRemove: 'native'    // Use MongoDB's native TTL index for cleanup
-  }),
+  store: sessionStore,           // undefined = default MemoryStore
   cookie: {
-    maxAge: 24 * 60 * 60 * 1000,             // 1 day in ms
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    maxAge: 24 * 60 * 60 * 1000,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   }
 }));
