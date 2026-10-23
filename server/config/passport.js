@@ -43,6 +43,30 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
         const username = email.split('@')[0];
 
+        // ── Verification flow ──
+        // If pendingVerifyEmail is set, this is a verification callback.
+        // We don't create a new user — the auth route callback handler
+        // will verify the match and activate the existing user.
+        if (req.session.pendingVerifyEmail) {
+          // Return a temporary user-like object with the Google email info
+          // so the callback route can compare and verify
+          const existingUser = await User.findOne({ email: email.toLowerCase() });
+          if (existingUser) {
+            // Pass the existing user through — the callback route will handle verification
+            existingUser.googleId = profile.id;
+            existingUser.displayName = profile.displayName || username;
+            return done(null, existingUser);
+          }
+          // If no user found, still pass the info so callback can show error
+          return done(null, {
+            _id: null,
+            email: email.toLowerCase(),
+            googleId: profile.id,
+            displayName: profile.displayName || username
+          });
+        }
+
+        // ── Normal Google Sign-In flow ──
         // Role passed via session (set before redirect to Google)
         const role = req.session.authRole || 'student';
 
@@ -50,6 +74,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         let user = await User.findOne({ googleId: profile.id });
 
         if (user) {
+          if (user.role === 'student' && !user.isVerified) {
+            user.isVerified = true;
+            await user.save();
+          }
           return done(null, user);
         }
 
@@ -60,17 +88,20 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           // Link Google account to existing manual account
           user.googleId = profile.id;
           user.displayName = profile.displayName || username;
+          // Also mark as verified since they proved Google ownership
+          user.isVerified = true;
           await user.save();
           return done(null, user);
         }
 
-        // Create brand new user
+        // Create brand new user — direct Google signup is auto-verified
         user = await User.create({
           username,
           email,
           googleId: profile.id,
           displayName: profile.displayName || username,
-          role
+          role,
+          isVerified: true  // Google signup = already verified
         });
 
         return done(null, user);

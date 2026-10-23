@@ -27,6 +27,11 @@ const userSchema = new mongoose.Schema({
     },
     default: 'student'
   },
+  // Becomes true only after Google OAuth verification or direct Google signup
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
   googleId: {
     type: String,
     sparse: true

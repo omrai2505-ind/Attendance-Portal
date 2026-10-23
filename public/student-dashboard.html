@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard — IIIT Dharwad Attendance Portal</title>
+  <meta name="description" content="Student attendance dashboard for IIIT Dharwad. View enrolled courses, open attendance sessions, and your face verification status." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@500;600;700&family=Noto+Sans+Kannada:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/face-verification.css" />
+  <style>
+    .font-kannada { font-family: 'Noto Sans Kannada', sans-serif; }
+    .font-hindi { font-family: 'Noto Sans Devanagari', sans-serif; }
+    .stat-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .tab-btn { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 600; border-radius: 0.75rem; transition: all 0.15s ease; border: none; cursor: pointer; }
+    .tab-btn.active { background-color: #2563eb; color: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .tab-btn:not(.active) { color: #475569; background: transparent; }
+    .tab-btn:not(.active):hover { background-color: #f1f5f9; }
+    .status-badge-present { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; background-color: #ecfdf5; color: #047857; font-size: 0.75rem; border-radius: 9999px; font-weight: 600; border: 1px solid #d1fae5; }
+    .status-badge-absent  { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; background-color: #fef2f2; color: #b91c1c; font-size: 0.75rem; border-radius: 9999px; font-weight: 600; border: 1px solid #fee2e2; }
+    .status-badge-pending { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; background-color: #fffbeb; color: #b45309; font-size: 0.75rem; border-radius: 9999px; font-weight: 600; border: 1px solid #fef3c7; }
+    .open-session-card { background: linear-gradient(to bottom right, #eff6ff, #eef2ff); border: 1px solid #bfdbfe; border-radius: 1rem; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .course-row:hover { background-color: rgba(248, 250, 252, 0.6); }
+  </style>
+</head>
+<body class="portal-bg min-h-screen flex flex-col">
+
+  <!-- ── Loading State ──────────────────────────────────────────────── -->
+  <div id="loadingState" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+    <div class="spinner border-blue-600 mb-3" style="width: 32px; height: 32px; border-width: 3px; border-top-color: #1e40af;"></div>
+    <p class="text-sm font-semibold text-slate-600">Loading your dashboard...</p>
+  </div>
+
+  <!-- ── Auth Error State ───────────────────────────────────────────── -->
+  <div id="authError" class="hidden min-h-screen flex flex-col items-center justify-center p-6 text-center">
+    <p class="text-red-600 font-semibold mb-4">Session expired or access denied.</p>
+    <a href="/signin.html" class="btn-submit px-6 py-2 rounded-xl">Sign In Again</a>
+  </div>
+
+  <!-- ── Main Dashboard ─────────────────────────────────────────────── -->
+  <div id="dashContent" class="hidden flex-1 flex flex-col">
+
+    <!-- Top Nav -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 sm:w-12 h-10 sm:h-12 flex-shrink-0">
+            <img src="/images/logo.svg" alt="IIIT Dharwad Logo" class="w-full h-full object-contain" />
+          </div>
+          <div>
+            <p class="text-sm font-bold text-slate-900 leading-tight">IIIT Dharwad</p>
+            <p class="text-[11px] text-slate-500 font-medium hidden sm:block">Student Attendance Portal</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 sm:gap-4">
+          <div class="text-right hidden sm:block">
+            <p id="usernameDisplay" class="text-sm font-bold text-slate-900 leading-tight"></p>
+            <span class="inline-block text-xs font-semibold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100 mt-0.5">🎓 Student</span>
+          </div>
+          <button id="openFaceIdBtn" class="inline-flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all">
+            <span>👤 Face ID Setup</span>
+          </button>
+          <button id="logoutBtn" class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+
+      <!-- Alert area -->
+      <div id="alertBanner" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 font-medium"></div>
+
+      <!-- First-Time Registration Banner (visible if face not registered) -->
+      <div id="firstTimeFaceBanner" class="hidden bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-300 rounded-2xl p-5 shadow-sm transition-all">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xl flex-shrink-0">
+              📸
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="inline-block text-[11px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-md">First-Time Setup</span>
+                <h3 class="text-sm sm:text-base font-bold text-amber-950">Mandatory Face ID Registration</h3>
+              </div>
+              <p class="text-xs sm:text-sm text-amber-900/90 mt-1 max-w-2xl">
+                To prevent proxy attendance, you must register your face reference before marking attendance for any class session.
+              </p>
+            </div>
+          </div>
+          <button id="registerFaceNowBtn" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs sm:text-sm transition-all shadow-sm flex-shrink-0">
+            Register Face ID Now →
+          </button>
+        </div>
+      </div>
+
+      <!-- Metrics Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="metricsGrid">
+        <div class="human-card p-5 col-span-2 lg:col-span-1">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Overall Attendance</p>
+          <div id="metricOverall" class="text-3xl font-extrabold text-slate-900">—</div>
+          <div class="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
+            <div id="metricBar" class="h-full rounded-full transition-all duration-700" style="width: 0%; background: #22c55e;"></div>
+          </div>
+          <p id="metricStatus" class="text-xs font-semibold mt-2 text-slate-500">Loading...</p>
+        </div>
+        <div class="human-card p-5">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Classes Attended</p>
+          <div id="metricAttended" class="text-2xl font-extrabold text-slate-900">—</div>
+          <p id="metricSessionsLabel" class="text-xs text-slate-500 mt-1">of — sessions</p>
+        </div>
+        <div class="human-card p-5">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Enrolled Courses</p>
+          <div id="metricCourses" class="text-2xl font-extrabold text-slate-900">—</div>
+          <p class="text-xs text-slate-500 mt-1">active this semester</p>
+        </div>
+        <div class="human-card p-5">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Open Sessions</p>
+          <div id="metricOpen" class="text-2xl font-extrabold text-slate-900">—</div>
+          <p class="text-xs text-slate-500 mt-1" id="metricOpenLabel">available right now</p>
+        </div>
+      </div>
+
+      <!-- Open Attendance Sessions -->
+      <section id="openSessionsSection">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-bold text-slate-900">Open Attendance Sessions</h2>
+          <button id="refreshOpenBtn" class="text-xs font-semibold text-blue-700 hover:underline">↺ Refresh</button>
+        </div>
+        <div id="openSessionsList" class="space-y-3">
+          <p class="text-sm text-slate-500 italic">Loading sessions...</p>
+        </div>
+      </section>
+
+      <!-- Multi-Factor Attendance Guided Workflow Section -->
+      <section id="attendanceWorkflowSection" class="hidden" aria-label="Guided Attendance Workflow">
+        <div class="human-card p-6 border-2 border-blue-500/20 shadow-xl">
+          <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <div>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">
+                Multi-Factor Verification
+              </span>
+              <h2 class="text-xl font-extrabold text-slate-900 mt-1" id="wfSessionTitle">Session Attendance</h2>
+              <p class="text-xs text-slate-500 mt-0.5" id="wfCourseLabel"></p>
+            </div>
+            <button id="cancelWorkflowBtn" onclick="closeAttendanceWorkflow()" class="text-xs text-slate-500 hover:text-slate-800 font-semibold px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50">
+              ✕ Cancel
+            </button>
+          </div>
+
+          <!-- Progress Stepper -->
+          <div class="grid grid-cols-3 gap-2 mb-6">
+            <div id="stepIndicator1" class="p-2.5 rounded-xl border bg-blue-50 border-blue-500 text-blue-900 text-xs font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">1</span>
+              <span>Scan QR</span>
+            </div>
+            <div id="stepIndicator2" class="p-2.5 rounded-xl border bg-slate-50 border-slate-200 text-slate-500 text-xs font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-[10px]">2</span>
+              <span>Verify GPS</span>
+            </div>
+            <div id="stepIndicator3" class="p-2.5 rounded-xl border bg-slate-50 border-slate-200 text-slate-500 text-xs font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-[10px]">3</span>
+              <span>Face Check</span>
+            </div>
+          </div>
+
+          <!-- In-Workflow Status & Error Banners -->
+          <div id="wfErrorAlert" class="hidden mb-5 p-4 rounded-xl text-xs sm:text-sm font-semibold bg-red-50 border border-red-300 text-red-800 transition-all"></div>
+          <div id="wfSubmittingAlert" class="hidden mb-5 p-4 rounded-xl text-xs sm:text-sm font-semibold bg-blue-50 border border-blue-300 text-blue-800 flex items-center justify-center gap-3 transition-all shadow-sm">
+            <div class="spinner border-blue-600" style="width: 22px; height: 22px; border-width: 2.5px; border-top-color: #1e40af;"></div>
+            <span>Verifying multi-factor credentials and recording your attendance on the server...</span>
+          </div>
+
+          <!-- Step 1: Dynamic QR Scanner -->
+          <div id="wfStep1" class="space-y-4">
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Step 1 of 3</p>
+              <h3 class="text-base font-bold text-slate-900">Scan Projected Classroom QR Code</h3>
+              <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                Point your device camera at the rotating QR code projected by the instructor. Codes expire every 30 seconds.
+              </p>
+
+              <!-- QR Reader Element for html5-qrcode -->
+              <div id="qrReader" class="max-w-sm mx-auto my-4 overflow-hidden rounded-2xl border border-slate-300 bg-black min-h-[260px] flex items-center justify-center text-slate-400 text-xs">
+                <span>Camera feed will appear here when scanner starts</span>
+              </div>
+
+              <div class="flex flex-wrap justify-center gap-3">
+                <button type="button" id="startScannerBtn" onclick="startQrScanner()" class="btn-primary text-sm px-5 py-2.5 rounded-xl">
+                  📷 Start Live Camera Scanner
+                </button>
+                <button type="button" id="stopScannerBtn" onclick="stopQrScanner()" class="btn-secondary text-sm px-4 py-2.5 rounded-xl hidden">
+                  Stop Camera
+                </button>
+                <label for="qrFileInput" class="btn-secondary text-sm px-4 py-2.5 rounded-xl cursor-pointer inline-flex items-center gap-1.5 hover:bg-slate-100">
+                  <span>📁</span> Upload QR Photo / File
+                </label>
+                <input type="file" id="qrFileInput" accept="image/*" class="hidden" onchange="handleQrFileUpload(event)" />
+              </div>
+              <div id="qrScannerStatus" class="mt-3 text-xs font-medium text-slate-600"></div>
+            </div>
+          </div>
+
+          <!-- Step 2: Fresh GPS Acquisition -->
+          <div id="wfStep2" class="hidden space-y-4">
+            <div class="p-5 bg-slate-50 border border-slate-200 rounded-2xl text-center">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Step 2 of 3</p>
+              <h3 class="text-base font-bold text-slate-900">Fresh GPS Location Verification</h3>
+              <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                Acquiring high-accuracy GPS coordinates to confirm physical presence inside the classroom geofence.
+              </p>
+
+              <div id="gpsResultCard" class="my-4 p-4 bg-white border border-slate-200 rounded-xl max-w-sm mx-auto text-left space-y-2">
+                <div class="flex justify-between text-xs">
+                  <span class="text-slate-500">Acquisition:</span>
+                  <span id="gpsAcquisitionStatus" class="font-semibold text-blue-600">Waiting to request...</span>
+                </div>
+                <div class="flex justify-between text-xs">
+                  <span class="text-slate-500">Reported Accuracy:</span>
+                  <span id="gpsAccuracyDisplay" class="font-semibold text-slate-700">—</span>
+                </div>
+                <div class="flex justify-between text-xs">
+                  <span class="text-slate-500">Coordinates:</span>
+                  <span id="gpsCoordsDisplay" class="font-mono text-[11px] text-slate-600">—</span>
+                </div>
+              </div>
+
+              <div class="flex justify-center gap-3">
+                <button type="button" id="acquireGpsBtn" onclick="acquireFreshGps()" class="btn-primary text-sm px-5 py-2.5 rounded-xl">
+                  📍 Acquire GPS Location
+                </button>
+              </div>
+              <div id="gpsStatusMessage" class="mt-3 text-xs font-medium text-slate-600"></div>
+            </div>
+          </div>
+
+          <!-- Step 3: Face Verification & Submission -->
+          <div id="wfStep3" class="hidden space-y-4">
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 text-center">Step 3 of 3</p>
+              <h3 class="text-base font-bold text-slate-900 text-center mb-1">Biometric Face Verification</h3>
+              <p class="text-xs text-slate-500 text-center max-w-md mx-auto mb-4">
+                Verify your face against your enrolled template to complete attendance.
+              </p>
+              <div id="wfFaceVerification"></div>
+            </div>
+          </div>
+
+          <!-- Final Result Card -->
+          <div id="wfFinalResult" class="hidden p-6 rounded-2xl text-center space-y-3">
+            <div id="wfFinalIcon" class="text-4xl">🎉</div>
+            <h3 id="wfFinalTitle" class="text-lg font-black text-slate-900">Attendance Recorded!</h3>
+            <p id="wfFinalMessage" class="text-sm text-slate-600 max-w-md mx-auto"></p>
+            <div class="pt-2">
+              <button onclick="closeAttendanceWorkflow()" class="btn-primary text-sm px-6 py-2 rounded-xl">
+                Return to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Face Enrollment Standalone Section (for registration / profile check) -->
+      <section id="faceVerificationSection" class="hidden" aria-label="Face identity enrollment">
+        <div class="human-card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-blue-700 mb-1">Face ID Registration</p>
+              <h2 class="text-lg font-extrabold text-slate-900" id="fvSessionTitle">Face Identity Check</h2>
+              <p class="text-sm text-slate-500 mt-0.5" id="fvCourseLabel"></p>
+            </div>
+            <button id="cancelFvBtn" class="text-xs text-slate-500 hover:text-slate-800 font-semibold">✕ Cancel</button>
+          </div>
+          <div id="faceVerification"></div>
+        </div>
+      </section>
+
+      <!-- Tabs -->
+      <div class="flex gap-2">
+        <button id="tabCourses" class="tab-btn active" onclick="switchTab('courses')">My Courses</button>
+        <button id="tabHistory" class="tab-btn" onclick="switchTab('history')">Attendance History</button>
+      </div>
+
+      <!-- Courses Tab -->
+      <div id="panelCourses">
+        <div class="human-card overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100">
+            <h3 class="text-base font-bold text-slate-900">Course-wise Attendance</h3>
+            <p class="text-xs text-slate-500 mt-0.5">All enrolled courses · Current Semester</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="bg-slate-50 text-xs text-slate-500 font-semibold uppercase tracking-wider border-b border-slate-100">
+                <tr>
+                  <th class="px-6 py-3.5">Course</th>
+                  <th class="px-6 py-3.5">Faculty</th>
+                  <th class="px-6 py-3.5">Attended / Total</th>
+                  <th class="px-6 py-3.5">Percentage</th>
+                  <th class="px-6 py-3.5">Status</th>
+                </tr>
+              </thead>
+              <tbody id="coursesTableBody" class="divide-y divide-slate-100 font-medium">
+                <tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 italic">Loading courses...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance History Tab -->
+      <div id="panelHistory" class="hidden">
+        <div class="human-card overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100">
+            <h3 class="text-base font-bold text-slate-900">Attendance History</h3>
+            <p class="text-xs text-slate-500 mt-0.5">All recorded sessions</p>
+          </div>
+          <div id="historyContent" class="overflow-x-auto">
+            <p class="text-center py-8 text-slate-400 italic text-sm">Loading history...</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 font-medium">
+      Indian Institute of Information Technology Dharwad · Official Academic Portal
+    </footer>
+  </div>
+
+  <!-- QR Scanning Library (Local offline bundle) -->
+  <script src="/js/html5-qrcode.min.js"></script>
+  <script src="/js/face-verification.js"></script>
+  <script src="/js/student-dashboard.js"></script>
+</body>
+</html>

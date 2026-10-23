@@ -1,68 +1,54 @@
-// ═══════════════════════════════════════════════════════════════════════════
-// IIIT Dharwad Attendance Portal — Welcome Page Logic
-// ═══════════════════════════════════════════════════════════════════════════
+// Legacy welcome.html redirect — forwards to role-specific dashboards.
+// This handles old bookmarks and any lingering OAuth redirects to /welcome.html.
 
-const loadingState   = document.getElementById('loadingState');
-const welcomeContent = document.getElementById('welcomeContent');
-const usernameEl     = document.getElementById('usernameDisplay');
-const roleBadgeEl    = document.getElementById('roleBadge');
-
-// ── Check for token in URL (Google OAuth callback) ────────────────────────
 const urlParams = new URLSearchParams(window.location.search);
-const urlToken  = urlParams.get('token');
-
+const urlToken = urlParams.get('token');
 if (urlToken) {
   localStorage.setItem('token', urlToken);
-  // Clean the token from the URL for security
   window.history.replaceState({}, document.title, '/welcome.html');
 }
 
-// ── Get stored token ──────────────────────────────────────────────────────
 const token = localStorage.getItem('token');
-
 if (!token) {
-  // Not logged in — redirect to sign in
   window.location.replace('/signin.html');
 } else {
-  loadUser();
-}
-
-// ── Load user info ────────────────────────────────────────────────────────
-async function loadUser() {
-  try {
-    const res = await fetch('/api/auth/me', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!res.ok) {
-      // Token is invalid or expired
-      localStorage.removeItem('token');
-      window.location.replace('/signin.html');
-      return;
-    }
-
-    const data = await res.json();
-    const user = data.user;
-
-    // Display user info
-    usernameEl.textContent = user.username || user.email.split('@')[0];
-    roleBadgeEl.textContent = user.role === 'teacher' ? '👨‍🏫 Teacher' : '🎓 Student';
-
-    // Show welcome content, hide loading
-    loadingState.style.display   = 'none';
-    welcomeContent.style.display = 'block';
-
-  } catch (err) {
-    console.error('Failed to load user:', err);
-    localStorage.removeItem('token');
-    window.location.replace('/signin.html');
+  // Determine role from stored value, or fetch from /api/auth/me
+  const role = localStorage.getItem('role');
+  if (role === 'teacher') {
+    window.location.replace('/teacher-dashboard.html');
+  } else if (role === 'student') {
+    window.location.replace('/student-dashboard.html');
+  } else {
+    // Fetch from server to determine role
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.user) {
+          localStorage.setItem('role', data.user.role);
+          if (data.user.role === 'teacher') {
+            window.location.replace('/teacher-dashboard.html');
+          } else {
+            window.location.replace('/student-dashboard.html');
+          }
+        } else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          window.location.replace('/signin.html');
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        window.location.replace('/signin.html');
+      });
   }
 }
 
-// ── Logout ────────────────────────────────────────────────────────────────
+// Stub to prevent errors if face-verification.js calls FaceVerification.destroy()
+window.FaceVerification = window.FaceVerification || { destroy: () => {} };
 function logout() {
+  window.FaceVerification.destroy();
   localStorage.removeItem('token');
+  localStorage.removeItem('role');
   window.location.replace('/signin.html');
 }

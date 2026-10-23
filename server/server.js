@@ -40,15 +40,31 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // --------------- API Routes ---------------
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/face-verification', require('./routes/face-verification'));
+app.use('/api/teacher', require('./routes/teacher'));
+app.use('/api/student', require('./routes/student'));
 
-// --------------- Catch-all: serve index.html ---------------
+// --------------- Catch-all: serve HTML pages ---------------
+// Let named HTML files be served; the wildcard handles React-style SPAs.
+// We only fall back to index.html for non-API, non-asset requests.
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 // --------------- Start Server ---------------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`\n  🚀  Server running at http://localhost:${PORT}`);
   console.log(`  📚  IIIT Dharwad Attendance Portal\n`);
+
+  // Ensure AI Face Inference Engine (YuNet + SFace) is running
+  try {
+    const { ensureRunning } = require('./face-verification/inference-supervisor');
+    ensureRunning().catch((err) => {
+      console.warn('  ⚠️  Face inference auto-start check:', err.message);
+    });
+  } catch (err) {
+    console.warn('  ⚠️  Could not initialize face inference supervisor:', err.message);
+  }
 });
+

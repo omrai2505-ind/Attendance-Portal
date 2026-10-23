@@ -1,0 +1,13 @@
+.git
+.github
+.vscode
+.venv
+**/__pycache__
+**/*.pyc
+node_modules
+server/node_modules
+inference/.venv
+inference/.opencv-zoo
+.env
+.env.local
+scratch

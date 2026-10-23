@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  attendance-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iiitdwd-attendance
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:3000}
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FACE_SERVICE_TOKEN=${FACE_SERVICE_TOKEN}
+      - FACE_TEMPLATE_ENCRYPTION_KEY=${FACE_TEMPLATE_ENCRYPTION_KEY}
+      - FACE_MATCH_THRESHOLD=${FACE_MATCH_THRESHOLD:-0.363}
+      - GPS_MAX_ACCURACY_METERS=150
+      - GPS_BUFFER_METERS=120
+      - QR_MAX_AGE_WINDOWS=8
+      - QR_WINDOW_SECONDS=30
+    env_file:
+      - .env

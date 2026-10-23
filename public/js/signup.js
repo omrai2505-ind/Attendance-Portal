@@ -247,13 +247,19 @@ form.addEventListener('submit', async (e) => {
       return;
     }
 
-    // Success — store token and redirect
-    localStorage.setItem('token', data.token);
-    showToast('Account created successfully!', 'success');
+    // Signup returns pendingVerification — redirect to verify page
+    if (data.pendingVerification) {
+      showToast('Account created! Redirecting to verification...', 'success');
+      setTimeout(() => {
+        window.location.href = `/verify.html?email=${encodeURIComponent(data.email || email)}`;
+      }, 800);
+      return;
+    }
 
-    setTimeout(() => {
-      window.location.href = '/welcome.html';
-    }, 800);
+    // Fallback (shouldn't normally happen)
+    showToast('Account created successfully!', 'success');
+    submitBtn.disabled = false;
+    submitText.textContent = 'Create Account';
 
   } catch (err) {
     console.error('Signup error:', err);

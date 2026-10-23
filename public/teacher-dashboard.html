@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Dashboard — IIIT Dharwad Attendance Portal</title>
+  <meta name="description" content="Teacher attendance management dashboard for IIIT Dharwad. Manage courses, sessions, and student attendance." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@500;600;700&family=Noto+Sans+Kannada:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .font-kannada { font-family: 'Noto Sans Kannada', sans-serif; }
+    .font-hindi   { font-family: 'Noto Sans Devanagari', sans-serif; }
+
+    /* Side nav */
+    .side-nav {
+      background-color: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      width: 240px;
+      min-width: 240px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 0.75rem;
+      margin: 0 0.5rem;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      color: #475569;
+      background: transparent;
+      border: none;
+      width: calc(100% - 1rem);
+      text-align: left;
+    }
+    .nav-item:hover {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+    .nav-item.active {
+      background-color: #2563eb !important;
+      color: #ffffff !important;
+    }
+
+    /* Cards */
+    .dash-card {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+    .metric-card {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+      padding: 1.25rem;
+    }
+
+    /* Status badges */
+    .badge-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.625rem;
+      background-color: #ecfdf5;
+      color: #047857;
+      font-size: 0.75rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      border: 1px solid #a7f3d0;
+    }
+    .badge-closed {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.625rem;
+      background-color: #f1f5f9;
+      color: #475569;
+      font-size: 0.75rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+    }
+    .badge-draft {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.625rem;
+      background-color: #fffbeb;
+      color: #b45309;
+      font-size: 0.75rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      border: 1px solid #fde68a;
+    }
+    .badge-present {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.625rem;
+      background-color: #ecfdf5;
+      color: #047857;
+      font-size: 0.75rem;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+    .badge-absent {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.625rem;
+      background-color: #fef2f2;
+      color: #b91c1c;
+      font-size: 0.75rem;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+    .badge-pending {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.625rem;
+      background-color: #fffbeb;
+      color: #b45309;
+      font-size: 0.75rem;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background-color: #2563eb;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      transition: all 0.15s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background-color: #f1f5f9;
+      color: #334155;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      transition: all 0.15s ease;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+    }
+    .btn-secondary:hover {
+      background-color: #e2e8f0;
+    }
+    .btn-danger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background-color: #fef2f2;
+      color: #b91c1c;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      transition: all 0.15s ease;
+      border: 1px solid #fecaca;
+      cursor: pointer;
+    }
+    .btn-danger:hover {
+      background-color: #fee2e2;
+    }
+    .btn-success {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background-color: #059669;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      transition: all 0.15s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-success:hover {
+      background-color: #047857;
+    }
+    .btn-sm {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.5rem;
+    }
+
+    /* Form */
+    .form-input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      color: #0f172a;
+      background-color: #ffffff;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .form-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+    .form-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 0.25rem;
+    }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      text-align: left;
+      font-size: 0.875rem;
+      border-collapse: collapse;
+    }
+    .data-table thead {
+      background-color: #f8fafc;
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .data-table th, .data-table td {
+      padding: 0.875rem 1.25rem;
+    }
+    .data-table tbody tr {
+      border-bottom: 1px solid #f8fafc;
+      transition: background-color 0.15s ease;
+    }
+    .data-table tbody tr:hover {
+      background-color: rgba(248, 250, 252, 0.8);
+    }
+
+    /* Modal Backdrop and Box */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-backdrop.hidden {
+      display: none !important;
+    }
+    .modal-box {
+      background-color: #ffffff;
+      border-radius: 1rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      width: 100%;
+      max-width: 32rem;
+      padding: 1.5rem;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      animation: modalPop 0.15s ease-out;
+    }
+    @keyframes modalPop {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Animations */
+    @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.2s ease; }
+
+    /* Scrollable area */
+    .main-area { overflow-y: auto; height: calc(100vh - 64px); }
+
+    /* Loading skeleton */
+    .skeleton { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; background-color: #e2e8f0; border-radius: 0.5rem; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+
+  <!-- ── Loading State ──────────────────────────────────────────────── -->
+  <div id="loadingState" class="min-h-screen flex items-center justify-center">
+    <div class="text-center">
+      <div class="spinner border-blue-600 mx-auto mb-4" style="width: 40px; height: 40px; border-width: 4px; border-top-color: #1e40af;"></div>
+      <p class="text-sm font-semibold text-slate-600">Authenticating teacher session...</p>
+    </div>
+  </div>
+
+  <!-- ── Main Shell (hidden until authenticated) ────────────────────── -->
+  <div id="appShell" class="hidden flex-1 flex flex-col h-screen overflow-hidden">
+
+    <!-- Top Header -->
+    <header class="bg-white border-b border-slate-200 h-16 flex items-center px-6 justify-between flex-shrink-0 shadow-sm z-40">
+      <div class="flex items-center gap-3">
+        <img src="/images/logo.svg" alt="IIIT Dharwad" class="w-8 h-8 object-contain" />
+        <div>
+          <p class="text-sm font-bold text-slate-900 leading-tight">IIIT Dharwad</p>
+          <p class="text-[11px] text-slate-400 font-medium">Teacher Dashboard</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="text-right hidden sm:block">
+          <p id="teacherName" class="text-sm font-bold text-slate-900"></p>
+          <span class="text-xs font-semibold text-purple-800 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">👨‍🏫 Faculty</span>
+        </div>
+        <button id="logoutBtn" class="btn-secondary btn-sm">Sign Out</button>
+      </div>
+    </header>
+
+    <!-- Body: Sidebar + Content -->
+    <div class="flex flex-1 overflow-hidden">
+
+      <!-- Sidebar Nav -->
+      <aside class="side-nav py-4 flex-shrink-0 hidden lg:flex">
+        <nav class="flex flex-col gap-1 flex-1">
+          <button class="nav-item active" data-view="overview" onclick="showView('overview')">
+            <span>📊</span> Overview
+          </button>
+          <button class="nav-item" data-view="courses" onclick="showView('courses')">
+            <span>📚</span> My Courses
+          </button>
+          <button class="nav-item" data-view="sessions" onclick="showView('sessions')">
+            <span>📋</span> Sessions
+          </button>
+          <button class="nav-item" data-view="attendance" onclick="showView('attendance')">
+            <span>✅</span> Attendance
+          </button>
+        </nav>
+        <div class="px-4 pb-2 text-xs text-slate-400 font-medium">
+          IIIT Dharwad · Official Portal
+        </div>
+      </aside>
+
+      <!-- Mobile nav (top tabs) -->
+      <div class="lg:hidden border-b border-slate-200 bg-white w-full flex-shrink-0 flex px-2 gap-1 overflow-x-auto py-2 z-30" style="position: absolute; top: 64px; left: 0; right: 0;">
+        <button class="nav-item active text-xs px-3 py-1.5" data-view="overview" onclick="showView('overview')">📊 Overview</button>
+        <button class="nav-item text-xs px-3 py-1.5" data-view="courses" onclick="showView('courses')">📚 Courses</button>
+        <button class="nav-item text-xs px-3 py-1.5" data-view="sessions" onclick="showView('sessions')">📋 Sessions</button>
+        <button class="nav-item text-xs px-3 py-1.5" data-view="attendance" onclick="showView('attendance')">✅ Attendance</button>
+      </div>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 main-area p-6 lg:p-8 space-y-8 lg:mt-0 mt-12">
+
+        <!-- ── Toast ── -->
+        <div id="toast" class="fixed top-6 right-6 z-[9999] hidden max-w-sm bg-white border rounded-2xl shadow-xl px-5 py-4 text-sm font-semibold transition-all"></div>
+
+        <!-- ═══ OVERVIEW VIEW ════════════════════════════════════════ -->
+        <section id="view-overview" class="space-y-6 fade-in">
+          <div>
+            <h1 class="text-2xl font-extrabold text-slate-900">Welcome back, <span id="greetName"></span></h1>
+            <p class="text-sm text-slate-500 mt-1">Here's a summary of your teaching activity.</p>
+          </div>
+
+          <!-- Metrics -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="metric-card">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">My Courses</p>
+              <div id="metCourses" class="text-3xl font-extrabold text-slate-900">—</div>
+            </div>
+            <div class="metric-card">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Total Students</p>
+              <div id="metStudents" class="text-3xl font-extrabold text-slate-900">—</div>
+            </div>
+            <div class="metric-card">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Open Sessions</p>
+              <div id="metOpen" class="text-3xl font-extrabold text-emerald-600">—</div>
+            </div>
+            <div class="metric-card">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Pending Review</p>
+              <div id="metPending" class="text-3xl font-extrabold text-amber-600">—</div>
+            </div>
+          </div>
+
+          <!-- Active Sessions -->
+          <div class="dash-card overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 class="text-sm font-bold text-slate-900">Open Attendance Sessions</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Currently accepting student submissions</p>
+              </div>
+              <button onclick="showView('sessions')" class="text-xs font-semibold text-blue-600 hover:underline">View all</button>
+            </div>
+            <div id="openSessionsList" class="divide-y divide-slate-50">
+              <p class="px-6 py-6 text-sm text-slate-400 italic">Loading...</p>
+            </div>
+          </div>
+
+          <!-- Recent Sessions -->
+          <div class="dash-card overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100">
+              <h2 class="text-sm font-bold text-slate-900">Recent Completed Sessions</h2>
+            </div>
+            <div id="recentSessionsList" class="divide-y divide-slate-50">
+              <p class="px-6 py-6 text-sm text-slate-400 italic">Loading...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══ COURSES VIEW ══════════════════════════════════════════ -->
+        <section id="view-courses" class="hidden space-y-6 fade-in">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-2xl font-extrabold text-slate-900">My Courses</h1>
+              <p class="text-sm text-slate-500 mt-1">Create and manage your assigned courses.</p>
+            </div>
+            <button onclick="openCreateCourseModal()" class="btn-primary">
+              <span>+</span> New Course
+            </button>
+          </div>
+
+          <div id="coursesList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div class="dash-card p-6 col-span-full text-center text-sm text-slate-400 italic">Loading courses...</div>
+          </div>
+        </section>
+
+        <!-- ═══ COURSE DETAIL VIEW ══════════════════════════════════ -->
+        <section id="view-course-detail" class="hidden space-y-6 fade-in">
+          <div class="flex items-center gap-3">
+            <button onclick="showView('courses')" class="btn-secondary btn-sm">← Back</button>
+            <div>
+              <h1 id="cdCourseTitle" class="text-2xl font-extrabold text-slate-900">—</h1>
+              <p id="cdCourseMeta" class="text-sm text-slate-500 mt-0.5">—</p>
+            </div>
+          </div>
+
+          <!-- Enroll Students -->
+          <div class="dash-card p-6 space-y-4">
+            <h2 class="text-sm font-bold text-slate-900">Enroll Students</h2>
+            <p class="text-xs text-slate-500">Enter @iiitdwd.ac.in email addresses, one per line. Only verified student accounts are accepted.</p>
+            <textarea id="enrollEmails" class="form-input h-28 resize-none" placeholder="25bcs001@iiitdwd.ac.in&#10;25bcs002@iiitdwd.ac.in"></textarea>
+            <button id="enrollBtn" onclick="enrollStudents()" class="btn-primary btn-sm">Enroll Students</button>
+            <div id="enrollResult" class="hidden text-xs mt-2 p-3 rounded-xl border"></div>
+          </div>
+
+          <!-- Enrolled Students -->
+          <div class="dash-card overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 class="text-sm font-bold text-slate-900">Enrolled Students (<span id="cdStudentCount">0</span>)</h2>
+            </div>
+            <div id="cdStudentList" class="overflow-x-auto">
+              <p class="px-6 py-6 text-sm text-slate-400 italic">Loading...</p>
+            </div>
+          </div>
+
+          <!-- Sessions for this course -->
+          <div class="dash-card overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 class="text-sm font-bold text-slate-900">Class Sessions</h2>
+              <button id="cdCreateSessionBtn" onclick="openCreateSessionModal()" class="btn-primary btn-sm">+ New Session</button>
+            </div>
+            <div id="cdSessionsList" class="overflow-x-auto">
+              <p class="px-6 py-6 text-sm text-slate-400 italic">Loading sessions...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══ SESSIONS VIEW ═════════════════════════════════════════ -->
+        <section id="view-sessions" class="hidden space-y-6 fade-in">
+          <div>
+            <h1 class="text-2xl font-extrabold text-slate-900">All Sessions</h1>
+            <p class="text-sm text-slate-500 mt-1">Manage attendance sessions across all your courses.</p>
+          </div>
+          <div id="allSessionsContent" class="dash-card overflow-hidden">
+            <p class="px-6 py-8 text-sm text-slate-400 italic text-center">Loading sessions...</p>
+          </div>
+        </section>
+
+        <!-- ═══ ROSTER / ATTENDANCE VIEW ═════════════════════════════ -->
+        <section id="view-attendance" class="hidden space-y-6 fade-in">
+          <div class="flex items-center gap-3">
+            <button onclick="showView('sessions')" class="btn-secondary btn-sm">← Back to Sessions</button>
+            <div>
+              <h1 id="rosterSessionTitle" class="text-2xl font-extrabold text-slate-900">Session Roster</h1>
+              <p id="rosterCourseMeta" class="text-sm text-slate-500 mt-0.5">—</p>
+            </div>
+          </div>
+
+          <!-- Session Controls -->
+          <div class="dash-card p-5 flex flex-wrap items-center gap-4">
+            <div id="rosterStatusBadge"></div>
+            <div id="rosterControls" class="flex flex-wrap gap-3"></div>
+            <div class="ml-auto flex gap-3 text-xs font-semibold text-slate-500">
+              <span>Present: <span id="rosterPresentCount" class="text-emerald-700">0</span></span>
+              <span>Absent: <span id="rosterAbsentCount" class="text-red-700">0</span></span>
+              <span>Pending: <span id="rosterPendingCount" class="text-amber-700">0</span></span>
+              <span>Total: <span id="rosterTotal" class="text-slate-900">0</span></span>
+            </div>
+          </div>
+
+          <!-- Roster Table -->
+          <div class="dash-card overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="data-table" id="rosterTable">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Source</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="rosterTableBody">
+                  <tr><td colspan="5" class="text-center py-8 text-slate-400 italic">Loading roster...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ MODALS ════════════════════════════════════ -->
+
+  <!-- Create Course Modal -->
+  <div id="modalCreateCourse" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <h2 class="text-lg font-bold text-slate-900 mb-4">Create New Course</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="form-label">Course Code *</label>
+          <input id="newCourseCode" class="form-input" placeholder="CS301" />
+        </div>
+        <div>
+          <label class="form-label">Course Title *</label>
+          <input id="newCourseTitle" class="form-input" placeholder="Theory of Computation" />
+        </div>
+        <div>
+          <label class="form-label">Semester / Batch</label>
+          <input id="newCourseSem" class="form-input" placeholder="2025-26 Sem 1" />
+        </div>
+        <div>
+          <label class="form-label">Description</label>
+          <textarea id="newCourseDesc" class="form-input h-20 resize-none" placeholder="Optional course description"></textarea>
+        </div>
+      </div>
+      <div id="createCourseError" class="hidden mt-3 text-xs text-red-600 font-medium"></div>
+      <div class="flex gap-3 mt-6 justify-end">
+        <button onclick="closeModal('modalCreateCourse')" class="btn-secondary">Cancel</button>
+        <button id="createCourseBtn" onclick="createCourse()" class="btn-primary">Create Course</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Session Modal -->
+  <div id="modalCreateSession" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <h2 class="text-lg font-bold text-slate-900 mb-4">Create Class Session</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="form-label">Session Label</label>
+          <input id="newSessionLabel" class="form-input" placeholder="Lecture 12 – Sorting Algorithms" />
+        </div>
+        <div>
+          <label class="form-label">Scheduled Date/Time (optional)</label>
+          <input id="newSessionDate" type="datetime-local" class="form-input" />
+        </div>
+      </div>
+      <div id="createSessionError" class="hidden mt-3 text-xs text-red-600 font-medium"></div>
+      <div class="flex gap-3 mt-6 justify-end">
+        <button onclick="closeModal('modalCreateSession')" class="btn-secondary">Cancel</button>
+        <button id="createSessionBtn" onclick="createSession()" class="btn-primary">Create Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual Attendance Modal -->
+  <div id="modalManualAttendance" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <h2 class="text-lg font-bold text-slate-900 mb-1">Mark Attendance</h2>
+      <p id="manualStudentInfo" class="text-sm text-slate-500 mb-4"></p>
+      <div class="space-y-4">
+        <div>
+          <label class="form-label">Attendance Decision *</label>
+          <select id="manualStatus" class="form-input">
+            <option value="present">Present</option>
+            <option value="absent">Absent</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Note / Reason (optional)</label>
+          <input id="manualNote" class="form-input" placeholder="Medical leave, verified externally, etc." />
+        </div>
+      </div>
+      <div id="manualAttendanceError" class="hidden mt-3 text-xs text-red-600 font-medium"></div>
+      <div class="flex gap-3 mt-6 justify-end">
+        <button onclick="closeModal('modalManualAttendance')" class="btn-secondary">Cancel</button>
+        <button id="manualSubmitBtn" onclick="submitManualAttendance()" class="btn-primary">Save Decision</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Open Session / Classroom Location Configuration Modal -->
+  <div id="modalOpenSessionLocation" class="modal-backdrop hidden">
+    <div class="modal-box max-w-lg">
+      <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Configure Classroom Location</h2>
+          <p class="text-xs text-slate-500" id="openLocationSessionLabel">Set geofence before opening session</p>
+        </div>
+        <button onclick="closeModal('modalOpenSessionLocation')" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+      </div>
+
+      <div class="space-y-4 text-sm">
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs leading-relaxed">
+          <p class="font-semibold mb-1">📍 Classroom GPS Geofence</p>
+          Students will only be permitted to mark attendance if their verified device coordinates fall within the classroom radius (<code class="bg-blue-100 px-1 rounded">distance + accuracy &le; radius</code>).
+        </div>
+
+        <div class="flex gap-2">
+          <button type="button" id="detectTeacherLocationBtn" onclick="detectTeacherLocation()" class="btn-secondary text-xs flex-1 py-2">
+            🧭 Detect My Current Location
+          </button>
+        </div>
+        <div id="teacherGpsStatus" class="text-xs text-slate-500 font-medium"></div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label">Classroom Latitude *</label>
+            <input id="sessionLatInput" type="number" step="any" class="form-input" placeholder="e.g. 15.3928" />
+          </div>
+          <div>
+            <label class="form-label">Classroom Longitude *</label>
+            <input id="sessionLonInput" type="number" step="any" class="form-input" placeholder="e.g. 75.0253" />
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">Geofence Radius (meters) *</label>
+          <div class="flex items-center gap-3">
+            <input id="sessionRadiusInput" type="number" min="1" max="500" value="50" class="form-input w-28" />
+            <span class="text-xs text-slate-500">Default: 50m (Recommended for lecture halls)</span>
+          </div>
+        </div>
+
+        <div id="openLocationError" class="hidden text-xs text-red-600 font-medium p-2 bg-red-50 rounded-lg border border-red-200"></div>
+      </div>
+
+      <div class="flex gap-3 mt-6 justify-end pt-3 border-t border-slate-100">
+        <button onclick="closeModal('modalOpenSessionLocation')" class="btn-secondary">Cancel</button>
+        <button id="confirmOpenSessionBtn" onclick="confirmOpenSession()" class="btn-success">Confirm & Open Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Projector Mode / Dynamic Rotating QR Modal -->
+  <div id="modalProjectorQr" class="modal-backdrop hidden">
+    <div class="modal-box max-w-2xl bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 md:p-8 text-center">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+        <div class="text-left">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">
+            <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span> Dynamic QR Projector
+          </span>
+          <h2 id="projectorCourseTitle" class="text-xl font-extrabold text-slate-900 mt-1">Class Attendance</h2>
+          <p id="projectorSessionLabel" class="text-xs text-slate-500"></p>
+        </div>
+        <button onclick="closeProjectorMode()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all">
+          ✕ Exit Projector
+        </button>
+      </div>
+
+      <!-- QR Display & Timer Card -->
+      <div class="my-4 flex flex-col items-center justify-center p-6 bg-slate-50 border border-slate-200 rounded-2xl relative">
+        <div id="projectorQrContainer" class="p-4 bg-white rounded-2xl shadow-md border border-slate-100 inline-block min-w-[260px] min-h-[260px] flex items-center justify-center">
+          <p class="text-sm text-slate-400 italic">Generating QR code...</p>
+        </div>
+
+        <!-- Rotating Countdown Timer -->
+        <div class="mt-4 flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <div class="relative w-8 h-8 flex items-center justify-center">
+              <span id="projectorCountdown" class="text-lg font-black text-blue-700">30</span>
+            </div>
+            <span class="text-xs font-semibold text-slate-600">sec until refresh</span>
+          </div>
+          <span class="text-slate-300">|</span>
+          <span id="projectorRefreshStatus" class="text-xs font-medium text-emerald-600 flex items-center gap-1">
+            ✓ Active
+          </span>
+        </div>
+      </div>
+
+      <!-- Real-Time Live Attendance Counter -->
+      <div class="grid grid-cols-3 gap-3 my-4">
+        <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <p class="text-xs font-bold uppercase tracking-wider text-emerald-700">Present (Live)</p>
+          <div id="projectorPresentCount" class="text-2xl font-black text-emerald-900">0</div>
+        </div>
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-600">Pending Review</p>
+          <div id="projectorPendingCount" class="text-2xl font-black text-slate-800">0</div>
+        </div>
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+          <p class="text-xs font-bold uppercase tracking-wider text-blue-700">Total Enrolled</p>
+          <div id="projectorTotalCount" class="text-2xl font-black text-blue-900">0</div>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-400 mt-2">
+        Students must scan this code and verify their live face & location in person. The code rotates every 30 seconds to prevent sharing.
+      </p>
+    </div>
+  </div>
+
+  <script src="/js/teacher-dashboard.js"></script>
+</body>
+</html>

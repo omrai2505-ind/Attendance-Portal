@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@500;600;700&family=Noto+Sans+Kannada:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/face-verification.css" />
   <style>
     .font-kannada { font-family: 'Noto Sans Kannada', sans-serif; }
     .font-hindi { font-family: 'Noto Sans Devanagari', sans-serif; }
@@ -146,6 +147,10 @@
 
       </div>
 
+      <section id="faceVerificationSection" class="hidden" aria-label="Face identity verification evaluation">
+        <div id="faceVerification"></div>
+      </section>
+
       <!-- Course Attendance Table -->
       <div class="human-card overflow-hidden">
         <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
@@ -219,6 +224,7 @@
 
   </div>
 
+  <script src="/js/face-verification.js"></script>
   <script src="/js/welcome.js"></script>
 </body>
 </html>

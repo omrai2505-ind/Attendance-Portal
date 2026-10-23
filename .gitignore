@@ -1,10 +1,21 @@
 # Dependencies
 node_modules/
+inference/.venv/
+inference/.opencv-zoo/
+inference/models/*.onnx
+inference/__pycache__/
+inference/**/__pycache__/
+inference/*.py[cod]
+inference/**/*.py[cod]
 
 # Environment variables
 .env
 .env.*
 server/.env
+
+# Keep the safe template in version control
+!server/.env.example
+!inference/.env.example
 
 # OS files
 .DS_Store

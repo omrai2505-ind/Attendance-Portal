@@ -5,11 +5,29 @@
 const ALLOWED_DOMAIN = '@iiitdwd.ac.in';
 let selectedRole = 'student';
 
+// ── Auto-redirect if already logged in ────────────────────────────────────
+(function checkExistingToken() {
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  if (token) {
+    // Redirect to the correct dashboard based on stored role
+    if (role === 'teacher') {
+      window.location.replace('/teacher-dashboard.html');
+    } else {
+      window.location.replace('/student-dashboard.html');
+    }
+  }
+})();
+
+// ── Show error from OAuth redirect, if any ────────────────────────────────
+const urlParams = new URLSearchParams(window.location.search);
+const oauthError = urlParams.get('error');
+
 // ── DOM Elements ──────────────────────────────────────────────────────────
-const form       = document.getElementById('signinForm');
+const form = document.getElementById('signinForm');
 const emailInput = document.getElementById('email');
-const passInput  = document.getElementById('password');
-const submitBtn  = document.getElementById('submitBtn');
+const passInput = document.getElementById('password');
+const submitBtn = document.getElementById('submitBtn');
 const submitText = document.getElementById('submitText');
 const emailError = document.getElementById('emailError');
 
@@ -52,8 +70,8 @@ emailInput.addEventListener('input', () => {
 
 // ── Toggle Password Visibility ────────────────────────────────────────────
 function togglePasswordVisibility(inputId, btn) {
-  const input     = document.getElementById(inputId);
-  const eyeOpen   = btn.querySelector('.eye-open');
+  const input = document.getElementById(inputId);
+  const eyeOpen = btn.querySelector('.eye-open');
   const eyeClosed = btn.querySelector('.eye-closed');
 
   if (input.type === 'password') {
@@ -82,7 +100,7 @@ function showToast(message, type = 'error') {
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const email    = emailInput.value.trim().toLowerCase();
+  const email = emailInput.value.trim().toLowerCase();
   const password = passInput.value;
 
   // Validations
@@ -110,29 +128,46 @@ form.addEventListener('submit', async (e) => {
     const data = await res.json();
 
     if (!res.ok) {
+      // If user is unverified, redirect to verification page
+      if (data.code === 'UNVERIFIED') {
+        showToast('Account not verified. Redirecting...', 'error');
+        setTimeout(() => {
+          window.location.href = `/verify.html?email=${encodeURIComponent(data.email || email)}`;
+        }, 1200);
+        submitBtn.disabled = false;
+        submitText.textContent = 'Sign In to Dashboard';
+        return;
+      }
+
       showToast(data.message || 'Sign in failed');
       submitBtn.disabled = false;
-      submitText.textContent = 'Sign In';
+      submitText.textContent = 'Sign In to Dashboard';
       return;
     }
 
-    // Success — store token and redirect
+    // Success — store token and role, then redirect to correct dashboard
     localStorage.setItem('token', data.token);
+    localStorage.setItem('role', data.user.role);
     showToast('Signed in successfully!', 'success');
 
     setTimeout(() => {
-      window.location.href = '/welcome.html';
+      if (data.user.role === 'teacher') {
+        window.location.href = '/teacher-dashboard.html';
+      } else {
+        window.location.href = '/student-dashboard.html';
+      }
     }, 600);
 
   } catch (err) {
     console.error('Signin error:', err);
     showToast('Network error. Please try again.');
     submitBtn.disabled = false;
-    submitText.textContent = 'Sign In';
+    submitText.textContent = 'Sign In to Dashboard';
   }
 });
 
-// ── Auto-redirect if already logged in ────────────────────────────────────
-if (localStorage.getItem('token')) {
-  window.location.replace('/welcome.html');
+// ── Show error from OAuth redirect, if any ────────────────────────────────
+if (oauthError) {
+  showToast('Verification failed. Please try again.', 'error');
+  window.history.replaceState({}, document.title, '/signin.html');
 }
