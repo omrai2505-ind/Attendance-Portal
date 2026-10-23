@@ -166,8 +166,16 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
+
 // ── Show error from OAuth redirect, if any ────────────────────────────────
 if (oauthError) {
   showToast('Verification failed. Please try again.', 'error');
   window.history.replaceState({}, document.title, '/signin.html');
+}
+
+// ── Google Sign-In (always shows account picker) ──────────────────────────
+function signInWithGoogle() {
+  // Always passes prompt=select_account through the /api/auth/google route
+  // so users with multiple Google accounts can choose the correct one
+  window.location.href = `/api/auth/google?role=${selectedRole}`;
 }
